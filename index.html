@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Peta Interaktif - Rute</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Geocoder & EasyPrint -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script src="https://unpkg.com/leaflet-easyprint/dist/bundle.js"></script>
+
+  <!-- Routing Machine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+  <!-- Data GeoJSON DIY -->
+  <script src="jogja.js"></script>
+
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: "Times New Roman", serif;
+    }
+    .navbar {
+      background-color: #333 !important;
+    }
+    .navbar-brand {
+      font-size: 28px;
+      color: white !important;
+      margin: 0 auto;
+      text-align: center;
+    }
+    #map {
+      height: 80vh;
+      border-radius: 10px;
+    }
+    .form-check-label {
+      color: white;
+    }
+    .control-box {
+      background-color: #ccc;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <span class="navbar-brand">Peta Interaktif - Rute</span>
+</nav>
+
+<div class="container mt-3">
+  <div class="control-box">
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="toggleRoute" onchange="toggleRoute()">
+      <label class="form-check-label" for="toggleRoute">Tampilkan Rute</label>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+  var map = L.map('map').setView([-7.7757, 110.3748], 11);
+
+  var esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+  }).addTo(map);
+
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  });
+
+  var googleHybrid = L.tileLayer('http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    attribution: 'Google Hybrid'
+  });
+
+  var baseMaps = {
+    "Esri Satelit": esri,
+    "OpenStreetMap": osm,
+    "Google Hybrid": googleHybrid
+  };
+
+  L.control.layers(baseMaps, null).addTo(map);
+
+  var redIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.3.1/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var marker1 = L.marker([-7.7714, 110.3776], { icon: redIcon }).addTo(map)
+    .bindPopup("Balairung UGM").bindTooltip("Balairung UGM", { permanent: false, direction: "top" });
+
+  var marker2 = L.marker([-7.8045, 110.3649], { icon: redIcon }).addTo(map)
+    .bindPopup("Keraton Yogyakarta").bindTooltip("Keraton Yogyakarta", { permanent: false, direction: "top" });
+
+  var routingControl = null;
+  function toggleRoute() {
+    if (document.getElementById("toggleRoute").checked) {
+      if (!routingControl) {
+        routingControl = L.Routing.control({
+          waypoints: [marker1.getLatLng(), marker2.getLatLng()],
+          routeWhileDragging: true,
+          draggableWaypoints: false,
+          addWaypoints: false,
+          createMarker: function() { return null; }
+        }).addTo(map);
+      }
+    } else {
+      if (routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+      }
+    }
+  }
+
+  L.Control.geocoder().addTo(map);
+  L.easyPrint({ title: 'Print', position: 'topright' }).addTo(map);
+
+  // Tambah batas wilayah seluruh kabupaten di DIY
+  L.geoJSON(jogjageojson,{
+    style: function(feature) {
+      switch (feature.properties.KABUPATEN) {
+        case 'Gunung Kidul': return {color: "#ff9900"};
+        case 'Sleman': return {color: "red"};
+        case 'Bantul': return {color: "blue"};
+        case 'Yogyakarta': return {color: "green"};
+        case 'Kulon Progo': return {color: "magenta"};
+      }
+    },
+    onEachFeature: function (feature, layer) {
+      layer.bindPopup(
+        'Kecamatan adalah <strong>' + feature.properties.KECAMATAN + '</strong>'
+      );
+    }
+  }).addTo(map);
+</script>
+
+</body>
+</html>
